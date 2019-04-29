@@ -24,7 +24,7 @@ def harris(image, sigma, k): #input k for change the value easily
 	# 0.04 < k < 0.06
 	R = delta - k*(trace**2)
 	# R = delta/trace
-	return R, image_x, image_y
+	return R
 def supression(R,win=7):
 	R[  :win ,  :] = 0
 	R[-win:  ,  :] = 0
@@ -62,25 +62,51 @@ def plot_corners(img, coor_x, coor_y):
 	# plt.savefig("out.png")
 	plt.show()
 
-# featuere description : 將圖片獨特之處寫成數值，以供辨識比對
+# feature description : 將圖片獨特之處寫成數值，以供辨識比對
 # (SIFT) ：
 # 一個像素進行投票，梯度長度是持票數，梯度角度決定投票箱編號。 360° 等分成 8 個箱子。一個像素投票給一個箱子。
-def orientation(Lx, Ly, bins, kernel_size):
-	m = np.sqrt(Lx**2 + Ly**2)
-	theta = np.arctan(Ly/ (Lx+1e-8))*(180 / np.pi)
-	
+# By assigning a consistent orientation, the keypoint descriptor can be orientation invariant.
+# def orientation(Ix, Iy, bins, kernel_size):
+# 	m = np.sqrt(Ix**2 + Iy**2)
+# 	# 0 ~ 2pi
+# 	theta = np.arctan(Iy/ (Ix+1e-8))*(180 / np.pi)
+# 	theta[Ix < 0] += 180
+# 	theta = (theta + 360) % 360
+# 	# 4*4+8bin的descirptor是最好的，因此每个关键点将会产生128维的特征向量。
+# 	binsize = 360. / bins
+# 	theta_bin = (theta + binsize / 2) // int(binsize) % bins
+# 	print(theta)
+# 	print("binsize = ", binsize)
+# 	print("theta_bin = ", theta_bin)
+# Simplest solution :
+def description(image, coor_x, coor_y, win):
+	descriptor = np.zeros((500,(2*win+1)*(2*win+1)))
+	for i in range(500):
+		x = int(coor_x[i])
+		y = int(coor_y[i])
+		print(x)
+		print(y)
+		print(i)
+		one_dim = image[y-win:y+win+1, x-win:x+win+1].flatten()
+		print(one_dim.shape)
+		descriptor[i] = one_dim
+	return descriptor
 
-# def descriptor():
-# def feature_matching():
+
+
+
+
 
 #grayscale_test1photo
-img_gray = cv2.imread('./test_data/parrington/prtn01.jpg',cv2.IMREAD_GRAYSCALE)
+img_gray = cv2.imread('./parrington/prtn00.jpg',cv2.IMREAD_GRAYSCALE)
 img_gray = np.float32(img_gray)
-cv2.imwrite('testgray1.jpg', img_gray)
+cv2.imwrite('testgray.jpg', img_gray)
 print(type(img_gray), img_gray.shape)
  
  
-corner_response, i_x, i_y  = harris(img_gray, 3, 0.05)
+corner_response  = harris(img_gray, 3, 0.05)
 coords_x, coords_y = supression(corner_response)
 # print(coor_x,coor_y)
 plot_corners(img_gray, coords_x, coords_y)
+des = description(img_gray, coords_x, coords_y, 3)
+print(des.shape)
