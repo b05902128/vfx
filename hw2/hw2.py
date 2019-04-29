@@ -2,7 +2,8 @@ import numpy as np
 from scipy.ndimage import filters 
 import cv2
 import matplotlib.pyplot as plt 
-def harris(image, sigma):
+import math
+def harris(image, sigma, k): #input k for change the value easily
 	# derivatives
 	image_x = np.zeros(image.shape)
 	image_y = np.zeros(image.shape)
@@ -21,9 +22,9 @@ def harris(image, sigma):
 	trace = Ixx + Iyy +1e-10
 	# R = detM - k(trace(M)^2)
 	# 0.04 < k < 0.06
-	R = delta - 0.05*(trace**2)
+	R = delta - k*(trace**2)
 	# R = delta/trace
-	return R
+	return R, image_x, image_y
 def supression(R,win=7):
 	R[  :win ,  :] = 0
 	R[-win:  ,  :] = 0
@@ -58,23 +59,28 @@ def plot_corners(img, coor_x, coor_y):
 	plt.imshow(img, cmap = 'gray')
 	plt.plot(coor_x, coor_y, 'r*', markersize=1)
 	plt.axis('off')
-	plt.savefig("out.png")
- 
-# def plot_corners(img, coords): 
-#     # fig = figure(figsize=(15, 8))
-#     plt.imshow(img, cmap = 'gray')
-#     plt.plot(coords[:, 0], coords[:, 1], 'r*', markersize=5)
-#     plt.axis('off')
-#     plt.show()
- 
+	# plt.savefig("out.png")
+	plt.show()
+
+# featuere description : 將圖片獨特之處寫成數值，以供辨識比對
+# (SIFT) ：
+# 一個像素進行投票，梯度長度是持票數，梯度角度決定投票箱編號。 360° 等分成 8 個箱子。一個像素投票給一個箱子。
+def orientation(Lx, Ly, bins, kernel_size):
+	m = np.sqrt(Lx**2 + Ly**2)
+	theta = np.arctan(Ly/ (Lx+1e-8))*(180 / np.pi)
+	
+
+# def descriptor():
+# def feature_matching():
+
 #grayscale_test1photo
-img_gray = cv2.imread('./parrington/prtn01.jpg',cv2.IMREAD_GRAYSCALE)
+img_gray = cv2.imread('./test_data/parrington/prtn01.jpg',cv2.IMREAD_GRAYSCALE)
 img_gray = np.float32(img_gray)
-cv2.imwrite('testgray.jpg', img_gray)
+cv2.imwrite('testgray1.jpg', img_gray)
 print(type(img_gray), img_gray.shape)
  
  
-corner_response  = harris(img_gray, 3)
+corner_response, i_x, i_y  = harris(img_gray, 3, 0.05)
 coords_x, coords_y = supression(corner_response)
 # print(coor_x,coor_y)
 plot_corners(img_gray, coords_x, coords_y)
