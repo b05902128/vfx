@@ -101,7 +101,7 @@ def matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1):
 			entropy[j] = np.sum(np.abs(des0[i] - des1[j]))
 		index = np.argmin(entropy)
 		entropy = np.sort(entropy)
-		if entropy[0] < entropy[1] *0.8 :
+		if entropy[0] < entropy[1] *0.7 :
 			if used[index] == 0:
 				used[index] = 1
 				new_coords_x0.append(coords_x0[i])
@@ -110,9 +110,27 @@ def matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1):
 				new_coords_y1.append(coords_y1[index])
 	return new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1
 
+def appendimages(image0, image1): #the appended images displayed side by side for image mapping
+    
+    # select the image with the fewest rows and fill in enough empty rows
+    rows1 = image0.shape[0]
+    rows2 = image1.shape[0]
+    
+    return np.concatenate((image0, image1), axis=1)
 
+def plot_matching(image0, image1, new_coords_x0, new_coords_y0, new_coords_x1, new_coords_y1):
+	plt.figure(figsize=(30, 20))
+	image2 = appendimages(image1, image0)
+	plt.imshow(image2, cmap = 'gray')
+	for i in range(len(new_coords_x0)):
+		# print(new_coords_x0[i], new_coords_y0[i])
+		# print(new_coords_x1[i], new_coords_y1[i])
+		# plt.plot([new_coords_x0[i], new_coords_y0[i]], [0,0], 'c', c=[np.random.random(), np.random.random(), np.random.random()])
 
-
+		# plot([x[0], y[0]+cols1], [x[1], y[1]], 'r*', =[np.random.random(), np.random.random(), np.random.random()])
+		plt.plot([new_coords_x0[i]+384, new_coords_x1[i]], [new_coords_y0[i], new_coords_y1[i]], 'c', c=[np.random.random(), np.random.random(), np.random.random()])
+	plt.show()
+	plt.axis('off')
 
 
 #grayscale_test1photo
@@ -139,7 +157,7 @@ des1 = description(img_gray1, coords_x1, coords_y1, 5)
 
 
 new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1 =  matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1)
-
-plot_corners(img_gray1, "fig0.png",new_coords_x1, new_coords_y1)
-plot_corners(img_gray0, "fig1.png",new_coords_x0, new_coords_y0)
-
+print(len(new_coords_x0))
+plot_corners(img_gray1, "fig1.png",new_coords_x1, new_coords_y1)
+plot_corners(img_gray0, "fig0.png",new_coords_x0, new_coords_y0)
+plot_matching(img_gray0, img_gray1, new_coords_x0, new_coords_y0,new_coords_x1,new_coords_y1)
