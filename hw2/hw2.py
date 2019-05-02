@@ -54,13 +54,14 @@ def supression(R,win=7):
 	return (x,y)
  
 # plot corner
-def plot_corners(img, coor_x, coor_y): 
+def plot_corners(img,path, coor_x, coor_y): 
 	# fig = figure(figsize=(15, 8))
 	plt.imshow(img, cmap = 'gray')
 	plt.plot(coor_x, coor_y, 'r*', markersize=1)
 	plt.axis('off')
-	# plt.savefig("out.png")
+	plt.savefig(path)
 	plt.show()
+	plt.clf()
 
 # feature description : 將圖片獨特之處寫成數值，以供辨識比對
 # (SIFT) ：
@@ -84,13 +85,30 @@ def description(image, coor_x, coor_y, win):
 	for i in range(500):
 		x = int(coor_x[i])
 		y = int(coor_y[i])
-		print(x)
-		print(y)
-		print(i)
 		one_dim = image[y-win:y+win+1, x-win:x+win+1].flatten()
-		print(one_dim.shape)
 		descriptor[i] = one_dim
 	return descriptor
+
+def matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1):
+	used = np.zeros(500)
+	new_coords_x0 = []
+	new_coords_x1 = []
+	new_coords_y0 = []
+	new_coords_y1 = []
+	for i in range(500):
+		entropy = np.zeros(500)
+		for j in range(500):
+			entropy[j] = np.sum(np.abs(des0[i] - des1[j]))
+		index = np.argmin(entropy)
+		entropy = np.sort(entropy)
+		if entropy[0] < entropy[1] *0.8 :
+			if used[index] == 0:
+				used[index] = 1
+				new_coords_x0.append(coords_x0[i])
+				new_coords_x1.append(coords_x1[index])
+				new_coords_y0.append(coords_y0[i])
+				new_coords_y1.append(coords_y1[index])
+	return new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1
 
 
 
@@ -98,15 +116,30 @@ def description(image, coor_x, coor_y, win):
 
 
 #grayscale_test1photo
-img_gray = cv2.imread('./parrington/prtn00.jpg',cv2.IMREAD_GRAYSCALE)
-img_gray = np.float32(img_gray)
-cv2.imwrite('testgray.jpg', img_gray)
-print(type(img_gray), img_gray.shape)
+img_gray0 = cv2.imread('./parrington/prtn00.jpg',cv2.IMREAD_GRAYSCALE)
+img_gray0 = np.float32(img_gray0)
+cv2.imwrite('testgray.jpg', img_gray0)
+print(type(img_gray0), img_gray0.shape)
  
  
-corner_response  = harris(img_gray, 3, 0.05)
-coords_x, coords_y = supression(corner_response)
+corner_response0  = harris(img_gray0, 3, 0.05)
+coords_x0, coords_y0 = supression(corner_response0)
+
+img_gray1 = cv2.imread('./parrington/prtn01.jpg',cv2.IMREAD_GRAYSCALE)
+img_gray1 = np.float32(img_gray1)
+cv2.imwrite('testgray.jpg', img_gray1)
+print(type(img_gray1), img_gray1.shape)
+ 
+ 
+corner_response1  = harris(img_gray1, 3, 0.05)
+coords_x1, coords_y1 = supression(corner_response1)
 # print(coor_x,coor_y)
-plot_corners(img_gray, coords_x, coords_y)
-des = description(img_gray, coords_x, coords_y, 3)
-print(des.shape)
+des0 = description(img_gray0, coords_x0, coords_y0, 5)
+des1 = description(img_gray1, coords_x1, coords_y1, 5)
+
+
+new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1 =  matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1)
+
+plot_corners(img_gray1, "fig0.png",new_coords_x1, new_coords_y1)
+plot_corners(img_gray0, "fig1.png",new_coords_x0, new_coords_y0)
+
