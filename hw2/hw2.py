@@ -3,6 +3,7 @@ from scipy.ndimage import filters
 import cv2
 import matplotlib.pyplot as plt 
 import math
+import random
 def harris(image, sigma, k): #input k for change the value easily
 	# derivatives
 	image_x = np.zeros(image.shape)
@@ -132,9 +133,50 @@ def plot_matching(image0, image1, new_coords_x0, new_coords_y0, new_coords_x1, n
 	plt.show()
 	plt.axis('off')
 
+#image_stitching
+# RANSAC : find the best shift for the pair of pictures
+def RANSAC(new_coords_x0,new_coords_y0, new_coords_x1, new_coords_y1, last_shift_x, last_shift_y, threshold, n=100):
+	max_inlier = 0
+	pairs_diff_x = []
+	pairs_diff_y = []
+	pairs_diff = np.zeros((2, len(new_coords_y0)))
+	# calculate all [y0-x0, y1-x1]
+	print(len(new_coords_x0))
+	for k in range(len(new_coords_x0)):
+		pairs_diff_x.append(new_coords_x0[k] - new_coords_x1[k])
+		pairs_diff_y.append(new_coords_y0[k] - new_coords_y1[k])
+	pairs_diff = np.array([pairs_diff_x, pairs_diff_y])
+	pairs_diff[0] += last_shift_x
+	pairs_diff[1] += last_shift_y
+	diff = np.copy(pairs_diff)
+	print(pairs_diff.shape)
+	print(pairs_diff)
+	print(pairs_diff[:,74])
+	max_inlier = 0
+	for i in range(92):
+		# print("i = ", i)
+		random.seed()
+		index = random.randint(0, len(new_coords_x0)-1)
+		# print(pairs_diff)
+		# print("index = ", index)
+		shift = pairs_diff[:,index]
+		print("shift = ", shift)
+		diff[0] = pairs_diff[0] - shift[0]
+		diff[1] = pairs_diff[1] - shift[1]
+		inlier = 0
+		for j in range(diff.shape[1]):
+			dis = diff[: , j]
+			if dis[0] ** 2 + dis[1] ** 2 < threshold:
+				inlier += 1
+		if inlier > max_inlier:
+			max_inlier = inlier
+			best_shift = shift
+			# drift
+	return best_shift
+
 
 #grayscale_test1photo
-img_gray0 = cv2.imread('./parrington/prtn00.jpg',cv2.IMREAD_GRAYSCALE)
+img_gray0 = cv2.imread('./parrington/prtn03.jpg',cv2.IMREAD_GRAYSCALE)
 img_gray0 = np.float32(img_gray0)
 cv2.imwrite('testgray.jpg', img_gray0)
 print(type(img_gray0), img_gray0.shape)
@@ -143,7 +185,7 @@ print(type(img_gray0), img_gray0.shape)
 corner_response0  = harris(img_gray0, 3, 0.05)
 coords_x0, coords_y0 = supression(corner_response0)
 
-img_gray1 = cv2.imread('./parrington/prtn01.jpg',cv2.IMREAD_GRAYSCALE)
+img_gray1 = cv2.imread('./parrington/prtn04.jpg',cv2.IMREAD_GRAYSCALE)
 img_gray1 = np.float32(img_gray1)
 cv2.imwrite('testgray.jpg', img_gray1)
 print(type(img_gray1), img_gray1.shape)
@@ -158,6 +200,9 @@ des1 = description(img_gray1, coords_x1, coords_y1, 5)
 
 new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1 =  matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1)
 print(len(new_coords_x0))
-plot_corners(img_gray1, "fig1.png",new_coords_x1, new_coords_y1)
-plot_corners(img_gray0, "fig0.png",new_coords_x0, new_coords_y0)
-plot_matching(img_gray0, img_gray1, new_coords_x0, new_coords_y0,new_coords_x1,new_coords_y1)
+# plot_corners(img_gray0, "fig00.png", coords_x1, coords_y1)
+# plot_corners(img_gray1, "fig1.png",new_coords_x1, new_coords_y1)
+# plot_corners(img_gray0, "fig0.png",new_coords_x0, new_coords_y0)
+# plot_matching(img_gray0, img_gray1, new_coords_x0, new_coords_y0,new_coords_x1,new_coords_y1)
+best_shift = RANSAC(new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1, 0, 0, 10)
+print("best_shift = ", best_shift)
