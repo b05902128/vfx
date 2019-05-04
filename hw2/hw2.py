@@ -97,12 +97,14 @@ def matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1):
 	new_coords_y0 = []
 	new_coords_y1 = []
 	for i in range(500):
-		entropy = np.zeros(500)
-		for j in range(500):
-			entropy[j] = np.sum(np.abs(des0[i] - des1[j]))
+		entropy = np.abs(des1 - des0[i])
+		entropy = np.sum(entropy,axis = 1)
+
 		index = np.argmin(entropy)
-		entropy = np.sort(entropy)
-		if entropy[0] < entropy[1] *0.7 :
+		min1 = np.min(entropy)
+		entropy[index] = 100000000
+		min2 = np.min(entropy)
+		if min1 < min2 *0.7 :
 			if used[index] == 0:
 				used[index] = 1
 				new_coords_x0.append(coords_x0[i])
@@ -229,7 +231,7 @@ def blending(img0, img1, best_shift):
 
 
 #grayscale_test1photo
-img_gray0 = cv2.imread('./denny/denny14.jpg',cv2.IMREAD_GRAYSCALE)
+img_gray0 = cv2.imread('./parrington/prtn01.jpg',cv2.IMREAD_GRAYSCALE)
 img_gray0 = np.float32(img_gray0)
 cv2.imwrite('testgray.jpg', img_gray0)
 print(type(img_gray0), img_gray0.shape)
@@ -238,7 +240,7 @@ print(type(img_gray0), img_gray0.shape)
 corner_response0  = harris(img_gray0, 3, 0.05)
 coords_x0, coords_y0 = supression(corner_response0)
 
-img_gray1 = cv2.imread('./denny/denny00.jpg',cv2.IMREAD_GRAYSCALE)
+img_gray1 = cv2.imread('./parrington/prtn00.jpg',cv2.IMREAD_GRAYSCALE)
 img_gray1 = np.float32(img_gray1)
 cv2.imwrite('testgray.jpg', img_gray1)
 print(type(img_gray1), img_gray1.shape)
@@ -250,9 +252,9 @@ coords_x1, coords_y1 = supression(corner_response1)
 des0 = description(img_gray0, coords_x0, coords_y0, 5)
 des1 = description(img_gray1, coords_x1, coords_y1, 5)
 
-
 new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1 =  matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1)
 print(len(new_coords_x0))
+
 # plot_corners(img_gray0, "fig00.png", coords_x1, coords_y1)
 # plot_corners(img_gray1, "fig1.png",new_coords_x1, new_coords_y1)
 # plot_corners(img_gray0, "fig0.png",new_coords_x0, new_coords_y0)
