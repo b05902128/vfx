@@ -151,7 +151,7 @@ def RANSAC(new_coords_x0,new_coords_y0, new_coords_x1, new_coords_y1, last_shift
 	diff = np.copy(pairs_diff)
 	print(pairs_diff.shape)
 	print(pairs_diff)
-	print(pairs_diff[:,74])
+	# print(pairs_diff[:,74])
 	max_inlier = 0
 	for i in range(92):
 		# print("i = ", i)
@@ -173,14 +173,65 @@ def RANSAC(new_coords_x0,new_coords_y0, new_coords_x1, new_coords_y1, last_shift
 			best_shift = shift
 			# drift
 	return best_shift
+def blending(img0, img1, best_shift):
+	# img0.shape <512,384>
+	# best_shift[0] = x
+	# best_shift[1] = y
+	img0_h = img0.shape[0]
+	img0_w = img0.shape[1]
+	img1_h = img1.shape[0]
+	img1_w = img1.shape[1]
+
+	best_shift[0] = img0_w - abs(best_shift[0])
+	best_shift[1] = img0_h - abs(best_shift[1])
+	matched_h = int(img0_h + img1_h - abs(best_shift[1]))
+	matched_w = int(img0_w + img1_w - abs(best_shift[0]))
+	print("best_shift = ", best_shift)
+	print("matched_w = ", matched_w)
+	print("matched_h = ", matched_h)
+
+	new_img0 = np.zeros((matched_h, matched_w))
+	new_img1 = np.zeros((matched_h, matched_w))
 
 
+
+	if best_shift[1] > 0:
+		if matched_h > img0_h:
+			new_img0[0:img0_h, 0:img0_w] = img0
+		else:
+			new_img0[0:matched_h, 0:img0_w] = img0[0:matched_h, 0:img0_w]
+		new_img1[matched_h-img1_h:matched_h, matched_w-img1_w:matched_w] = img1
+	else:
+		new_img0[matched_h-img0_h:matched_h, 0:img0_w] = img0
+		new_img1[0:img1_h, matched_w-img1_w:matched_w] = img1
+
+	# cv2.imwrite("new_img0", new_img0)
+	# cv2.imwrite("new_img1", new_img1)
+	#blending(alpha)
+	blending_img = np.zeros((matched_h, matched_w))
+	constant = 20
+	for i in range(matched_w):
+		if i < img0_w - best_shift[0]:
+			blending_img[:,i] = new_img0[:,i]
+		elif i >= img0_w:
+			blending_img[:,i] = new_img1[:,i]
+		else:
+			middle = img0_w - best_shift[0]*0.5
+			# alpha = 0
+			if i < img0_w - best_shift[0] + constant:
+				blending_img[:,i] = new_img0[:,i]
+			elif i >= img0_w - constant:
+				blending_img[:,i] = new_img1[:,i]
+			else:
+				alpha = (i - img0_w + abs(best_shift[0]))/ abs(best_shift[0])
+				blending_img[:,i] = (1-alpha) * new_img0[:,i] + alpha * new_img1[:,i]
+	return blending_img
 #grayscale_test1photo
 img_gray0 = cv2.imread('./parrington/prtn03.jpg',cv2.IMREAD_GRAYSCALE)
 img_gray0 = np.float32(img_gray0)
 cv2.imwrite('testgray.jpg', img_gray0)
 print(type(img_gray0), img_gray0.shape)
- 
+
  
 corner_response0  = harris(img_gray0, 3, 0.05)
 coords_x0, coords_y0 = supression(corner_response0)
@@ -206,3 +257,7 @@ print(len(new_coords_x0))
 # plot_matching(img_gray0, img_gray1, new_coords_x0, new_coords_y0,new_coords_x1,new_coords_y1)
 best_shift = RANSAC(new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1, 0, 0, 10)
 print("best_shift = ", best_shift)
+blending_img = blending(img_gray1, img_gray0, best_shift)
+plt.imshow(blending_img, cmap = 'gray')
+plt.show()
+plt.axis('off')
