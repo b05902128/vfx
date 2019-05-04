@@ -228,6 +228,24 @@ def blending(img0, img1, best_shift):
 						blending_img[j,i] = (1-alpha) * new_img0[j,i] + alpha * new_img1[j,i]
 	return blending_img
 
+# cylinder_projection
+
+def cylinder_warping(image, focal_length):
+	image_h = image.shape[0]
+	image_w = image.shape[1]
+	warping = np.zeros(shape = image.shape , dtype=np.uint8)
+	h = image_h/2
+	w = image_w/2
+	for i in range(-int(h), int(h)):
+		for j in range(-int(w),int(w)):
+			x = int(focal_length*math.atan(j/ focal_length) + w)
+			y = int(focal_length*i/math.sqrt(j**2+focal_length**2) + h)
+			if x >= 0 and x < image_w and y >= 0 and y < image_h:
+				warping[y][x] = image[i+int(h)][j+int(w)]
+	_,threshold = cv2.threshold(cv2.cvtColor(warping, cv2.COLOR_BGR2GRAY), 1, 255, cv2.THRESH_BINARY)
+	contours = cv2.findContours(threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	x1, y1, w1, h1 = cv2.boundingRect(contours[0]) 
+	return warping[y1:y1+h1, x1:x1+w1]
 
 
 #grayscale_test1photo
@@ -261,8 +279,16 @@ print(len(new_coords_x0))
 # plot_matching(img_gray0, img_gray1, new_coords_x0, new_coords_y0,new_coords_x1,new_coords_y1)
 best_shift = RANSAC(new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1, 0, 0, 10)
 print("best_shift = ", best_shift)
+
+
 blending_img = blending(img_gray0, img_gray1, best_shift)
 plt.imshow(blending_img, cmap = 'gray')
-plt.savefig("test2.png")
+# plt.savefig("test2.png")
+plt.show()
+plt.axis('off')
+image00 = cv2.imread('./parrington/prtn00.jpg')
+warping = cylinder_warping(image00, 704.696)
+warping_rgb = warping[:,:,::-1]
+plt.imshow(warping_rgb)
 plt.show()
 plt.axis('off')
