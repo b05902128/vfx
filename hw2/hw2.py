@@ -179,10 +179,13 @@ def blending(img0, img1, best_shift):
 	# img0.shape <512,384>
 	# best_shift[0] = x
 	# best_shift[1] = y
+	print(img0.shape)
+	print(img1.shape)
+	print(43242343)
 	img0_h, img0_w = img0.shape
 	img1_h, img1_w = img1.shape
 
-	best_shift[0] = img0_w - abs(best_shift[0])
+	best_shift[0] = img1_w - abs(best_shift[0])
 	# best_shift[1] = img0_h - abs(best_shift[1])
 	matched_h = int(max(img0_h ,img1_h) + abs(best_shift[1]))
 	matched_w = int(img0_w + img1_w - abs(best_shift[0]))
@@ -247,48 +250,50 @@ def cylinder_warping(image, focal_length):
 	x1, y1, w1, h1 = cv2.boundingRect(contours[0]) 
 	return warping[y1:y1+h1, x1:x1+w1]
 
-
+for i in range(6,0,-1):
+	print(i)
 #grayscale_test1photo
-img_gray0 = cv2.imread('./parrington/prtn01.jpg',cv2.IMREAD_GRAYSCALE)
-img_gray0 = np.float32(img_gray0)
-cv2.imwrite('testgray.jpg', img_gray0)
-print(type(img_gray0), img_gray0.shape)
+	img_gray0 = cv2.imread('./parrington/prtn0'+str(i)+'.jpg',cv2.IMREAD_GRAYSCALE)
+	img_gray0 = np.float32(img_gray0)
+	# cv2.imwrite('testgray.jpg', img_gray0)
+	print(type(img_gray0), img_gray0.shape)
 
- 
-corner_response0  = harris(img_gray0, 3, 0.05)
-coords_x0, coords_y0 = supression(corner_response0)
+	 
+	corner_response0  = harris(img_gray0, 3, 0.05)
+	coords_x0, coords_y0 = supression(corner_response0)
 
-img_gray1 = cv2.imread('./parrington/prtn00.jpg',cv2.IMREAD_GRAYSCALE)
-img_gray1 = np.float32(img_gray1)
-cv2.imwrite('testgray.jpg', img_gray1)
-print(type(img_gray1), img_gray1.shape)
- 
- 
-corner_response1  = harris(img_gray1, 3, 0.05)
-coords_x1, coords_y1 = supression(corner_response1)
-# print(coor_x,coor_y)
-des0 = description(img_gray0, coords_x0, coords_y0, 5)
-des1 = description(img_gray1, coords_x1, coords_y1, 5)
+	img_gray1 = cv2.imread('./parrington/prtn0'+str(i-1)+'.jpg',cv2.IMREAD_GRAYSCALE)
+	img_gray1 = np.float32(img_gray1)
+	# cv2.imwrite('testgray.jpg', img_gray1)
+	print(type(img_gray1), img_gray1.shape)
 
-new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1 =  matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1)
-print(len(new_coords_x0))
+
+	corner_response1  = harris(img_gray1, 3, 0.05)
+	coords_x1, coords_y1 = supression(corner_response1)
+	# print(coor_x,coor_y)
+	des0 = description(img_gray0, coords_x0, coords_y0, 5)
+	des1 = description(img_gray1, coords_x1, coords_y1, 5)
+
+	new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1 =  matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1)
+	print(len(new_coords_x0))
 
 # plot_corners(img_gray0, "fig00.png", coords_x1, coords_y1)
 # plot_corners(img_gray1, "fig1.png",new_coords_x1, new_coords_y1)
 # plot_corners(img_gray0, "fig0.png",new_coords_x0, new_coords_y0)
 # plot_matching(img_gray0, img_gray1, new_coords_x0, new_coords_y0,new_coords_x1,new_coords_y1)
-best_shift = RANSAC(new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1, 0, 0, 10)
-print("best_shift = ", best_shift)
+	best_shift = RANSAC(new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1, 0, 0, 10)
+	print("best_shift = ", best_shift)
+	if(i == 6):
+		blending_img = img_gray0
 
-
-blending_img = blending(img_gray0, img_gray1, best_shift)
+	blending_img = blending(blending_img, img_gray1, best_shift)
 plt.imshow(blending_img, cmap = 'gray')
-# plt.savefig("test2.png")
-plt.show()
-plt.axis('off')
-image00 = cv2.imread('./parrington/prtn00.jpg')
-warping = cylinder_warping(image00, 704.696)
-warping_rgb = warping[:,:,::-1]
-plt.imshow(warping_rgb)
-plt.show()
-plt.axis('off')
+plt.savefig("test2.png")
+# plt.show()
+# plt.axis('off')
+# image00 = cv2.imread('./parrington/prtn00.jpg')
+# warping = cylinder_warping(image00, 704.696)
+# warping_rgb = warping[:,:,::-1]
+# plt.imshow(warping_rgb)
+# plt.show()
+# plt.axis('off')
