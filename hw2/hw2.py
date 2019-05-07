@@ -203,25 +203,13 @@ def blending(img0, img1, best_shift,pre_h):
 	#blending(alpha)
 	blending_img = np.zeros((matched_h, matched_w,3))
 	constant = 0
-	for i in range(matched_w):
-		if i < img0_w - best_shift[0]:
-			blending_img[:,i,:] = new_img0[:,i,:]
-		elif i >= img0_w:
-			blending_img[:,i,:] = new_img1[:,i,:]
-		else:
-			if i < img0_w - best_shift[0] + constant:
-				blending_img[:,i,:] = new_img0[:,i,:]
-			elif i >= img0_w - constant:
-				blending_img[:,i,:] = new_img1[:,i,:]
-			else:
-				alpha = (i - img0_w + abs(best_shift[0]))/ abs(best_shift[0])
-				for j in range(matched_h):
-					if new_img0[j,i,0] == 0:
-						blending_img[j,i,:] = new_img1[j,i,:]
-					elif new_img1[j,i,0] == 0:
-						blending_img[j,i,:] = new_img0[j,i,:]
-					else:
-						blending_img[j,i,:] = (1-alpha) * new_img0[j,i,:] + alpha * new_img1[j,i,:]
+
+	blending_img[:,:img0_w - best_shift[0],:] = new_img0[:,:img0_w - best_shift[0],:]
+	blending_img[:,img0_w:,:] = new_img1[:,img0_w:,:]
+
+	alpha = np.arange(0.0,1.0,1/best_shift[0])
+	alpha = np.tile(alpha, (3, 1)).transpose()
+	blending_img[:,img0_w - best_shift[0]:img0_w,:] = (1-alpha) * new_img0[:,img0_w - best_shift[0]:img0_w,:] + alpha * new_img1[:,img0_w - best_shift[0]:img0_w,:]
 	return blending_img, hh
 # cylinder_projection
 
@@ -280,20 +268,20 @@ def bundle_adjust(pano):
 focal_length = [704.916, 706.286, 705.849, 706.645, 706.587, 705.645, 705.327, 704.696, 703.794, 704.325, 704.696, 703.895, 704.289, 704.676, 704.847, 704.537, 705.102, 705.576]
 num_of_images  = 9
 # test_for_sample
-print("Start Warping")
-cnt = 0
-for i in range(9, 18):
-	image00 = cv2.imread('./parrington/prtn'+str(i)+'.jpg')
-	warping = cylinder_warping(image00, focal_length[i])
-	# warping_rgb = warping[:,:,::-1]
-	cv2.imwrite('./parrington1/prtn0'+str(cnt)+'.jpg', warping)
-	cnt+=1
-for i in range(num_of_images):
-	image00 = cv2.imread('./parrington/prtn0'+str(i)+'.jpg')
-	warping = cylinder_warping(image00, focal_length[i])
-	# warping_rgb = warping[:,:,::-1]
-	cv2.imwrite('./parrington1/prtn0'+str(cnt)+'.jpg', warping)
-	cnt+=1
+# print("Start Warping")
+# cnt = 0
+# for i in range(9, 18):
+# 	image00 = cv2.imread('./parrington/prtn'+str(i)+'.jpg')
+# 	warping = cylinder_warping(image00, focal_length[i])
+# 	# warping_rgb = warping[:,:,::-1]
+# 	cv2.imwrite('./parrington1/prtn0'+str(cnt)+'.jpg', warping)
+# 	cnt+=1
+# for i in range(num_of_images):
+# 	image00 = cv2.imread('./parrington/prtn0'+str(i)+'.jpg')
+# 	warping = cylinder_warping(image00, focal_length[i])
+# 	# warping_rgb = warping[:,:,::-1]
+# 	cv2.imwrite('./parrington1/prtn0'+str(cnt)+'.jpg', warping)
+# 	cnt+=1
 
 count = 0
 print("Start Mapping")
