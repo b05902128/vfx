@@ -260,14 +260,21 @@ def cylinder_warping(image, focal_length):
 	return warping[y1:y1+h1, x1:x1+w1]
 
 
-
+focal_length = [704.916, 706.286, 705.849, 706.645, 706.587, 705.645, 705.327]
+num_of_images  = 7
+for i in range(num_of_images):
+	image00 = cv2.imread('./parrington/prtn0'+str(i)+'.jpg')
+	warping = cylinder_warping(image00, focal_length[i])
+	# warping_rgb = warping[:,:,::-1]
+	cv2.imwrite('./parrington1/prtn0'+str(i)+'.jpg', warping)
 count = 0
 for i in range(6,0,-1):
 	print(i)
 	count+=1
 #grayscale_test1photo
-	img0 = cv2.imread('./parrington/prtn0'+str(i)+'.jpg')
+	img0 = cv2.imread('./parrington1/prtn0'+str(i)+'.jpg')
 	# img0 = cv2.imread('./bridge/DSC_38'+str(i)+'.jpg')
+	# cylinder_warping(img00)
 
 	img_gray0 = cv2.cvtColor(img0,cv2.COLOR_BGR2GRAY)
 	img_gray0 = np.float32(img_gray0)
@@ -278,7 +285,7 @@ for i in range(6,0,-1):
 	corner_response0  = harris(img_gray0, 3, 0.05)
 	coords_x0, coords_y0 = supression(corner_response0)
 
-	img1 = cv2.imread('./parrington/prtn0'+str(i-1)+'.jpg')
+	img1 = cv2.imread('./parrington1/prtn0'+str(i-1)+'.jpg')
 	# img1 = cv2.imread('./bridge/DSC_38'+str(i-1)+'.jpg')
 
 	img_gray1 = cv2.cvtColor(img1,cv2.COLOR_BGR2GRAY)
@@ -308,6 +315,23 @@ for i in range(6,0,-1):
 	blending_img,pre_h = blending(blending_img, img1, best_shift,pre_h)
 
 cv2.imwrite('cvout.jpg',np.array(np.clip(blending_img,0,255),dtype = int))
+
+# crop to ractangle(not yet done)
+img = cv2.imread('cvout.jpg')
+rows,cols = img.shape[:2]
+pts1 = np.float32([[56,65],[238,52],[28,237],[239,240]])
+pts2 = np.float32([[0,0],[200,0],[0,200],[200,200]])
+M = cv2.getPerspectiveTransform(pts1,pts2)
+res = cv2.warpPerspective(img,M,(200,200))
+plt.subplot(121)
+plt.imshow(img)
+plt.show()
+plt.axis('off')
+plt.subplot(122)
+plt.imshow(res)
+plt.show()
+plt.axis('off')
+
 # plt.imshow(np.array(np.clip(blending_img,0,255),dtype = int))
 # plt.savefig("test2.png")
 # plt.show()
