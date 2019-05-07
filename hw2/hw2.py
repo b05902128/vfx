@@ -140,7 +140,7 @@ def RANSAC(new_coords_x0,new_coords_y0, new_coords_x1, new_coords_y1, last_shift
 	print(pairs_diff)
 	# print(pairs_diff[:,74])
 	max_inlier = 0
-	for i in range(92):
+	for i in range(n):
 		# print("i = ", i)
 		random.seed()
 		index = random.randint(0, len(new_coords_x0)-1)
@@ -284,7 +284,7 @@ print("Start Warping")
 cnt = 0
 for i in range(9, 18):
 	image00 = cv2.imread('./parrington/prtn'+str(i)+'.jpg')
-	warping = cylinder_warping(image00, focal_length_test[i])
+	warping = cylinder_warping(image00, focal_length[i])
 	# warping_rgb = warping[:,:,::-1]
 	cv2.imwrite('./parrington1/prtn0'+str(cnt)+'.jpg', warping)
 	cnt+=1
