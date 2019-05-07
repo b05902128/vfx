@@ -63,23 +63,6 @@ def plot_corners(img,path, coor_x, coor_y):
 	plt.savefig(path)
 	plt.show()
 	plt.clf()
-
-# feature description : 將圖片獨特之處寫成數值，以供辨識比對
-# (SIFT) ：
-# 一個像素進行投票，梯度長度是持票數，梯度角度決定投票箱編號。 360° 等分成 8 個箱子。一個像素投票給一個箱子。
-# By assigning a consistent orientation, the keypoint descriptor can be orientation invariant.
-# def orientation(Ix, Iy, bins, kernel_size):
-# 	m = np.sqrt(Ix**2 + Iy**2)
-# 	# 0 ~ 2pi
-# 	theta = np.arctan(Iy/ (Ix+1e-8))*(180 / np.pi)
-# 	theta[Ix < 0] += 180
-# 	theta = (theta + 360) % 360
-# 	# 4*4+8bin的descirptor是最好的，因此每个关键点将会产生128维的特征向量。
-# 	binsize = 360. / bins
-# 	theta_bin = (theta + binsize / 2) // int(binsize) % bins
-# 	print(theta)
-# 	print("binsize = ", binsize)
-# 	print("theta_bin = ", theta_bin)
 # Simplest solution :
 def description(image, coor_x, coor_y, win):
 	descriptor = np.zeros((500,(2*win+1)*(2*win+1)))
@@ -259,16 +242,62 @@ def cylinder_warping(image, focal_length):
 	x1, y1, w1, h1 = cv2.boundingRect(contours[0]) 
 	return warping[y1:y1+h1, x1:x1+w1]
 
+def find_corner(image):
+    sum_x = np.sum(image, axis=0)
+    sum_y = np.sum(image, axis=1)
+    
+    index_x = np.where(sum_x > 0)[0]
+    sx = index_x[0]
+    ex = index_x[-1] + 1 # slicing
+    index_y = np.where(sum_y > 0)[0]
+    sy = index_y[0]
+    ey = index_y[-1] + 1 # slicing
+    
+    return sx, ex, sy, ey
+def bundle_adjust(pano):
+    h, w, _ = pano.shape
+    sx, ex, sy, ey = find_corner(pano)
+    
+    lc = pano[:, sx] # left column
+    ly = np.where(lc > 0)[0]
+    upper_left = [sx, ly[0]]
+    bottom_left = [sx, ly[-1]]
+    
+    ex -= 1
+    rc = pano[:, ex] # right column
+    ry = np.where(rc > 0)[0]
+    upper_right = [ex, ry[0]]
+    bottom_right = [ex, ry[-1]]
+    
+    corner1 = np.float32([upper_left, upper_right, bottom_left, bottom_right])
+    corner2 = np.float32([[0, 0], [w, 0], [0, h], [w, h]])
 
-focal_length = [704.916, 706.286, 705.849, 706.645, 706.587, 705.645, 705.327]
-num_of_images  = 7
+    M = cv2.getPerspectiveTransform(corner1, corner2)
+    pano_adjust = cv2.warpPerspective(pano, M, (w, h))
+    
+    return pano_adjust
+# sample_focal_length
+focal_length = [704.916, 706.286, 705.849, 706.645, 706.587, 705.645, 705.327, 704.696, 703.794, 704.325, 704.696, 703.895, 704.289, 704.676, 704.847, 704.537, 705.102, 705.576]
+num_of_images  = 9
+# test_for_sample
+print("Start Warping")
+cnt = 0
+for i in range(9, 18):
+	image00 = cv2.imread('./parrington/prtn'+str(i)+'.jpg')
+	warping = cylinder_warping(image00, focal_length_test[i])
+	# warping_rgb = warping[:,:,::-1]
+	cv2.imwrite('./parrington1/prtn0'+str(cnt)+'.jpg', warping)
+	cnt+=1
 for i in range(num_of_images):
 	image00 = cv2.imread('./parrington/prtn0'+str(i)+'.jpg')
 	warping = cylinder_warping(image00, focal_length[i])
 	# warping_rgb = warping[:,:,::-1]
-	cv2.imwrite('./parrington1/prtn0'+str(i)+'.jpg', warping)
+	cv2.imwrite('./parrington1/prtn0'+str(cnt)+'.jpg', warping)
+	cnt+=1
+
 count = 0
-for i in range(6,0,-1):
+print("Start Mapping")
+for i in range(17,0,-1):
 	print(i)
 	count+=1
 #grayscale_test1photo
@@ -316,29 +345,6 @@ for i in range(6,0,-1):
 
 cv2.imwrite('cvout.jpg',np.array(np.clip(blending_img,0,255),dtype = int))
 
-# crop to ractangle(not yet done)
-img = cv2.imread('cvout.jpg')
-rows,cols = img.shape[:2]
-pts1 = np.float32([[56,65],[238,52],[28,237],[239,240]])
-pts2 = np.float32([[0,0],[200,0],[0,200],[200,200]])
-M = cv2.getPerspectiveTransform(pts1,pts2)
-res = cv2.warpPerspective(img,M,(200,200))
-plt.subplot(121)
-plt.imshow(img)
-plt.show()
-plt.axis('off')
-plt.subplot(122)
-plt.imshow(res)
-plt.show()
-plt.axis('off')
-
-# plt.imshow(np.array(np.clip(blending_img,0,255),dtype = int))
-# plt.savefig("test2.png")
-# plt.show()
-# plt.axis('off')
-# image00 = cv2.imread('./parrington/prtn00.jpg')
-# warping = cylinder_warping(image00, 704.696)
-# warping_rgb = warping[:,:,::-1]
-# plt.imshow(warping_rgb)
-# plt.show()
-# plt.axis('off')
+# crop to ractangle
+pano = bundle_adjust(blending_img)
+cv2.imwrite('cropvout.jpg',np.array(np.clip(pano,0,255),dtype = int))
