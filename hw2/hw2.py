@@ -270,18 +270,18 @@ def bundle_adjust(pano):
 # sample_focal_length
 focal_length = [704.916, 706.286, 705.849, 706.645, 706.587, 705.645, 705.327, 704.696, 703.794, 704.325, 704.696, 703.895, 704.289, 704.676, 704.847, 704.537, 705.102, 705.576]
 num_of_images  = 9
-# test_for_sample
-# print("Start Warping")
 
+print("Start Warping")
 cnt = 0
 for i in range(3853,3863,1):
-	print("Prossing warping")
+	print("Processing warping")
 	image00 = cv2.imread('./NTU/DSC_'+str(i)+'.jpg')
 	warping = cylinder_warping(image00, 4800)
 	# warping_rgb = warping[:,:,::-1]
 	cv2.imwrite('./NTU/DSC1_'+str(cnt)+'.jpg', warping)
 	cnt+=1
 
+# test_for_sample
 # for i in range(num_of_images):
 # 	image00 = cv2.imread('./parrington/prtn0'+str(i)+'.jpg')
 # 	warping = cylinder_warping(image00, focal_length[i])
@@ -326,8 +326,8 @@ for i in range(0,9,1):
 	new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1 =  matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1)
 	print(len(new_coords_x0))
 
-	# plot_corners(img_gray0, "./result/fig"+str(i)+".png", coords_x0, coords_y0)
-	# plot_corners(img_gray1, "./result/fig1"+str(i)+".png", coords_x1, coords_y1)
+	# plot_corners(img_gray0, "./result/fig0"+str(i)+".png", coords_x0, coords_y0)
+	# plot_corners(img_gray1, "./result/fig01"+str(i)+".png", coords_x1, coords_y1)
 
 	# plot_corners(img_gray1, "fig1.png",new_coords_x1, new_coords_y1)
 	# plot_corners(img_gray0, "fig0.png",new_coords_x0, new_coords_y0)
@@ -339,8 +339,8 @@ for i in range(0,9,1):
 		pre_h = 0
 	blending_img,pre_h = blending(blending_img, img1, best_shift,pre_h)
 
-cv2.imwrite('cvout77.jpg',np.array(np.clip(blending_img,0,255),dtype = int))
+cv2.imwrite('cvout.jpg',np.array(np.clip(blending_img,0,255),dtype = int))
 
 # crop to ractangle
 pano = bundle_adjust(blending_img)
-cv2.imwrite('cropvout77.jpg',np.array(np.clip(pano,0,255),dtype = int))
+cv2.imwrite('cropout.jpg',np.array(np.clip(pano,0,255),dtype = int))
