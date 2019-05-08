@@ -26,7 +26,7 @@ def harris(image, sigma, k): #input k for change the value easily
 	R = delta - k*(trace**2)
 	# R = delta/trace
 	return R
-def supression(R,win=7):
+def supression(R,win=30):
 	R[  :win ,  :] = 0
 	R[-win:  ,  :] = 0
 	R[  :  ,  :win] = 0
@@ -44,7 +44,7 @@ def supression(R,win=7):
 	x = []
 	y = []
 	maximum = []
-	for i in range(500):
+	for i in range(1000):
 		max = np.argmax(R)
 		maximum.append(max)
 		maxh = max//w
@@ -65,21 +65,22 @@ def plot_corners(img,path, coor_x, coor_y):
 	plt.clf()
 # Simplest solution :
 def description(image, coor_x, coor_y, win):
-	descriptor = np.zeros((500,(2*win+1)*(2*win+1)))
-	for i in range(500):
+	descriptor = np.zeros((1000,(2*win+1)*(2*win+1)))
+	for i in range(1000):
 		x = int(coor_x[i])
 		y = int(coor_y[i])
 		one_dim = image[y-win:y+win+1, x-win:x+win+1].flatten()
+		one_dim = (one_dim - one_dim.mean()) / one_dim.std()
 		descriptor[i] = one_dim
 	return descriptor
 
 def matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1):
-	used = np.zeros(500)
+	used = np.zeros(1000)
 	new_coords_x0 = []
 	new_coords_x1 = []
 	new_coords_y0 = []
 	new_coords_y1 = []
-	for i in range(500):
+	for i in range(1000):
 		entropy = np.abs(des1 - des0[i])
 		entropy = np.sum(entropy,axis = 1)
 
@@ -87,7 +88,7 @@ def matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1):
 		min1 = np.min(entropy)
 		entropy[index] = 100000000
 		min2 = np.min(entropy)
-		if min1 < min2 *0.7 :
+		if min1 < min2 *0.8 :
 			if used[index] == 0:
 				used[index] = 1
 				new_coords_x0.append(coords_x0[i])
@@ -105,7 +106,7 @@ def appendimages(image0, image1): #the appended images displayed side by side fo
     return np.concatenate((image0, image1), axis=1)
 
 def plot_matching(image0, image1, new_coords_x0, new_coords_y0, new_coords_x1, new_coords_y1,path):
-	plt.figure(figsize=(30, 20))
+	# plt.figure(figsize=(30, 20))
 	image2 = appendimages(image0, image1)
 	plt.imshow(image2, cmap = 'gray')
 	for i in range(len(new_coords_x0)):
@@ -114,8 +115,8 @@ def plot_matching(image0, image1, new_coords_x0, new_coords_y0, new_coords_x1, n
 		# plt.plot([new_coords_x0[i], new_coords_y0[i]], [0,0], 'c', c=[np.random.random(), np.random.random(), np.random.random()])
 
 		# plot([x[0], y[0]+cols1], [x[1], y[1]], 'r*', =[np.random.random(), np.random.random(), np.random.random()])
-		plt.plot([new_coords_x0[i], new_coords_x1[i]+3264], [new_coords_y0[i], new_coords_y1[i]], 'c', c=[np.random.random(), np.random.random(), np.random.random()])
-	# plt.show()
+		plt.plot([new_coords_x0[i], new_coords_x1[i]+4968], [new_coords_y0[i], new_coords_y1[i]], 'y-', lw = 0.5)
+	plt.show()
 	plt.axis('off')
 	plt.savefig(path)
 	plt.clf()
@@ -203,13 +204,15 @@ def blending(img0, img1, best_shift,pre_h):
 	#blending(alpha)
 	blending_img = np.zeros((matched_h, matched_w,3))
 	constant = 0
+	half = best_shift[0]//2
+	move = 80
+	blending_img[:,:img0_w - move -half,:] = new_img0[:,:img0_w - move - half,:]
+	blending_img[:,img0_w - half + move:,:] = new_img1[:,img0_w - half +move:,:]
 
-	blending_img[:,:img0_w - best_shift[0],:] = new_img0[:,:img0_w - best_shift[0],:]
-	blending_img[:,img0_w:,:] = new_img1[:,img0_w:,:]
-
-	alpha = np.arange(0.0,1.0,1/best_shift[0])
+	alpha = np.arange(0.0,1.0,1/(move*2))
 	alpha = np.tile(alpha, (3, 1)).transpose()
-	blending_img[:,img0_w - best_shift[0]:img0_w,:] = (1-alpha) * new_img0[:,img0_w - best_shift[0]:img0_w,:] + alpha * new_img1[:,img0_w - best_shift[0]:img0_w,:]
+	print("alpha = ", alpha.shape)
+	blending_img[:,img0_w - move -half:img0_w + move -half,:] =(1-alpha) * new_img0[:,img0_w - move -half:img0_w + move -half,:] + alpha * new_img1[:,img0_w - move -half:img0_w + move -half,:]
 	return blending_img, hh
 # cylinder_projection
 
@@ -269,13 +272,16 @@ focal_length = [704.916, 706.286, 705.849, 706.645, 706.587, 705.645, 705.327, 7
 num_of_images  = 9
 # test_for_sample
 # print("Start Warping")
-# cnt = 0
-# for i in range(9, 18):
-# 	image00 = cv2.imread('./parrington/prtn'+str(i)+'.jpg')
-# 	warping = cylinder_warping(image00, focal_length[i])
-# 	# warping_rgb = warping[:,:,::-1]
-# 	cv2.imwrite('./parrington1/prtn0'+str(cnt)+'.jpg', warping)
-# 	cnt+=1
+
+cnt = 0
+for i in range(3853,3863,1):
+	print("Prossing warping")
+	image00 = cv2.imread('./NTU/DSC_'+str(i)+'.jpg')
+	warping = cylinder_warping(image00, 4800)
+	# warping_rgb = warping[:,:,::-1]
+	cv2.imwrite('./NTU/DSC1_'+str(cnt)+'.jpg', warping)
+	cnt+=1
+
 # for i in range(num_of_images):
 # 	image00 = cv2.imread('./parrington/prtn0'+str(i)+'.jpg')
 # 	warping = cylinder_warping(image00, focal_length[i])
@@ -285,11 +291,11 @@ num_of_images  = 9
 
 count = 0
 print("Start Mapping")
-for i in range(17,0,-1):
+for i in range(0,9,1):
 	print(i)
 	count+=1
 #grayscale_test1photo
-	img0 = cv2.imread('./parrington1/prtn0'+str(i)+'.jpg')
+	img0 = cv2.imread('./NTU/DSC1_'+str(i)+'.jpg')
 	# img0 = cv2.imread('./bridge/DSC_38'+str(i)+'.jpg')
 	# cylinder_warping(img00)
 
@@ -302,7 +308,7 @@ for i in range(17,0,-1):
 	corner_response0  = harris(img_gray0, 3, 0.05)
 	coords_x0, coords_y0 = supression(corner_response0)
 
-	img1 = cv2.imread('./parrington1/prtn0'+str(i-1)+'.jpg')
+	img1 = cv2.imread('./NTU/DSC1_'+str(i+1)+'.jpg')
 	# img1 = cv2.imread('./bridge/DSC_38'+str(i-1)+'.jpg')
 
 	img_gray1 = cv2.cvtColor(img1,cv2.COLOR_BGR2GRAY)
@@ -314,16 +320,18 @@ for i in range(17,0,-1):
 	corner_response1  = harris(img_gray1, 3, 0.05)
 	coords_x1, coords_y1 = supression(corner_response1)
 	# print(coor_x,coor_y)
-	des0 = description(img_gray0, coords_x0, coords_y0, 5)
-	des1 = description(img_gray1, coords_x1, coords_y1, 5)
+	des0 = description(img_gray0, coords_x0, coords_y0, 10)
+	des1 = description(img_gray1, coords_x1, coords_y1, 10)
 
 	new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1 =  matching(des0,des1,coords_x0,coords_y0,coords_x1,coords_y1)
 	print(len(new_coords_x0))
 
-# plot_corners(img_gray0, "fig00.png", coords_x1, coords_y1)
-# plot_corners(img_gray1, "fig1.png",new_coords_x1, new_coords_y1)
-# plot_corners(img_gray0, "fig0.png",new_coords_x0, new_coords_y0)
-	# plot_matching(img_gray0, img_gray1, new_coords_x0, new_coords_y0,new_coords_x1,new_coords_y1,"match"+str(i)+".png")
+	# plot_corners(img_gray0, "./result/fig"+str(i)+".png", coords_x0, coords_y0)
+	# plot_corners(img_gray1, "./result/fig1"+str(i)+".png", coords_x1, coords_y1)
+
+	# plot_corners(img_gray1, "fig1.png",new_coords_x1, new_coords_y1)
+	# plot_corners(img_gray0, "fig0.png",new_coords_x0, new_coords_y0)
+	# plot_matching(img_gray0, img_gray1, new_coords_x0, new_coords_y0,new_coords_x1,new_coords_y1,"./result/match"+str(i)+".png")
 	best_shift = RANSAC(new_coords_x0,new_coords_y0,new_coords_x1,new_coords_y1, 0, 0, 10)
 	print("best_shift = ", best_shift)
 	if(count == 1):
@@ -331,8 +339,8 @@ for i in range(17,0,-1):
 		pre_h = 0
 	blending_img,pre_h = blending(blending_img, img1, best_shift,pre_h)
 
-cv2.imwrite('cvout.jpg',np.array(np.clip(blending_img,0,255),dtype = int))
+cv2.imwrite('cvout77.jpg',np.array(np.clip(blending_img,0,255),dtype = int))
 
 # crop to ractangle
 pano = bundle_adjust(blending_img)
-cv2.imwrite('cropvout.jpg',np.array(np.clip(pano,0,255),dtype = int))
+cv2.imwrite('cropvout77.jpg',np.array(np.clip(pano,0,255),dtype = int))
