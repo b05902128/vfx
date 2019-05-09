@@ -24,14 +24,14 @@ def cylinder_warping(image, focal_length):
 	return warping[y1:y1+h1, x1:x1+w1]
 
 def harris(image, sigma, k): #input k for change the value easily
-	# derivatives
 	image_x = np.zeros(image.shape)
 	image_y = np.zeros(image.shape)
-	# compute components of the Harris matrix
+	# derivatives
 	# image_x, image_y = np.gradient(image)
 	filters.gaussian_filter(image, (sigma, sigma), (0, 1), image_x)
 	filters.gaussian_filter(image, (sigma, sigma), (1, 0), image_y)
 
+	# compute components of the Harris matrix
 	xx = image_x * image_x
 	xy = image_x * image_y
 	yy = image_y * image_y
@@ -59,6 +59,7 @@ def supression(R,win,num_points):
 	x = []# width
 	y = []# height
 	maximum = []
+	#find several max points
 	for i in range(num_points):
 		max = np.argmax(R)
 		maximum.append(max)
@@ -142,9 +143,9 @@ def RANSAC(new_coords_x0,new_coords_y0, new_coords_x1, new_coords_y1, threshold,
 
 	pairs_diff = np.array([new_coords_x0 - new_coords_x1 , new_coords_y0 - new_coords_y1])
 	diff = np.copy(pairs_diff)
-
+	# find the vector which is closest to other vectors
 	for i in range(n):
-		index = np.random.randint(0, len(new_coords_x0)-1)
+		index = np.random.randi6nt(0, len(new_coords_x0)-1)
 		shift = pairs_diff[:,index]
 		diff = pairs_diff.transpose() - shift
 		inlier = 0
@@ -253,15 +254,15 @@ if __name__ == '__main__':
 	threshold = 10
 	np.random.seed(1)
 
-	# print("Start Warping")
-	# cnt = 0
-	# for i in range(3853,3863,1):
-	# 	print("Processing warping")
-	# 	image00 = cv2.imread('./NTU/DSC_'+str(i)+'.jpg')
-	# 	warping = cylinder_warping(image00, 4800)
-	# 	# warping_rgb = warping[:,:,::-1]
-	# 	cv2.imwrite('./NTU/DSC1_'+str(cnt)+'.jpg', warping)
-	# 	cnt+=1
+	print("Start Warping")
+	cnt = 0
+	for i in range(3853,3863,1):
+		print("Processing warping")
+		image00 = cv2.imread('./NTU/DSC_'+str(i)+'.jpg')
+		warping = cylinder_warping(image00, 4800)
+		# warping_rgb = warping[:,:,::-1]
+		cv2.imwrite('./NTU/DSC1_'+str(cnt)+'.jpg', warping)
+		cnt+=1
 
 	# test_for_sample
 	# for i in range(num_of_images):
@@ -274,7 +275,7 @@ if __name__ == '__main__':
 	count = 0
 
 	print("Start Mapping")
-	for i in range(1,2,1):
+	for i in range(0,9,1):
 		print(i)
 		count+=1
 		img0 = cv2.imread('./NTU/DSC1_'+str(i)+'.jpg')
