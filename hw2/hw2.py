@@ -4,6 +4,25 @@ import cv2
 import matplotlib.pyplot as plt 
 import math
 import random
+# cylinder_projection
+
+def cylinder_warping(image, focal_length):
+	image_h = image.shape[0]
+	image_w = image.shape[1]
+	warping = np.zeros(shape = image.shape , dtype=np.uint8)
+	h = image_h/2
+	w = image_w/2
+	for i in range(-int(h), int(h)):
+		for j in range(-int(w),int(w)):
+			x = int(focal_length*math.atan(j/ focal_length) + w)
+			y = int(focal_length*i/math.sqrt(j**2+focal_length**2) + h)
+			if x >= 0 and x < image_w and y >= 0 and y < image_h:
+				warping[y][x] = image[i+int(h)][j+int(w)]
+	_,threshold = cv2.threshold(cv2.cvtColor(warping, cv2.COLOR_BGR2GRAY), 1, 255, cv2.THRESH_BINARY)
+	contours = cv2.findContours(threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	x1, y1, w1, h1 = cv2.boundingRect(contours[0]) 
+	return warping[y1:y1+h1, x1:x1+w1]
+
 def harris(image, sigma, k): #input k for change the value easily
 	# derivatives
 	image_x = np.zeros(image.shape)
@@ -27,6 +46,7 @@ def harris(image, sigma, k): #input k for change the value easily
 	R = delta - k*(trace**2)
 	# R = delta/trace
 	return R
+
 def supression(R,win,num_points):
 	R[  :win ,  :] = 0
 	R[-win:  ,  :] = 0
@@ -186,24 +206,6 @@ def blending(img0, img1, best_shift,pre_h):
 	#blend between left and right
 	blending_img[:,left:right,:] =(1-alpha) * new_img0[:,left:right,:] + alpha * new_img1[:,left:right,:]
 	return blending_img, nowh
-# cylinder_projection
-
-def cylinder_warping(image, focal_length):
-	image_h = image.shape[0]
-	image_w = image.shape[1]
-	warping = np.zeros(shape = image.shape , dtype=np.uint8)
-	h = image_h/2
-	w = image_w/2
-	for i in range(-int(h), int(h)):
-		for j in range(-int(w),int(w)):
-			x = int(focal_length*math.atan(j/ focal_length) + w)
-			y = int(focal_length*i/math.sqrt(j**2+focal_length**2) + h)
-			if x >= 0 and x < image_w and y >= 0 and y < image_h:
-				warping[y][x] = image[i+int(h)][j+int(w)]
-	_,threshold = cv2.threshold(cv2.cvtColor(warping, cv2.COLOR_BGR2GRAY), 1, 255, cv2.THRESH_BINARY)
-	contours = cv2.findContours(threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-	x1, y1, w1, h1 = cv2.boundingRect(contours[0]) 
-	return warping[y1:y1+h1, x1:x1+w1]
 
 def find_corner(image):
     sum_x = np.sum(image, axis=0)
