@@ -3,7 +3,6 @@ from scipy.ndimage import filters
 import cv2
 import matplotlib.pyplot as plt 
 import math
-import random
 # cylinder_projection
 
 def cylinder_warping(image, focal_length):
